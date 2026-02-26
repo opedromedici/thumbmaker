@@ -8,22 +8,22 @@
 }
 
 .title {
-  font-size: 12px;
-  font-weight: 800;
+  font-size: 0.58rem;
+  font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.16em;
   margin-bottom: 16px;
 }
 
 .section { display: flex; flex-direction: column; gap: 8px; }
 
 .sectionLabel {
-  font-size: 11px;
+  font-size: 0.58rem;
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.12em;
   margin-bottom: 2px;
 }
 
@@ -31,9 +31,18 @@
   width: 100%;
   justify-content: flex-start;
   gap: 10px;
-  font-size: 13px;
+  font-size: 0.65rem;
+  background: var(--bg-raised);
+  color: var(--text-primary);
+  border-radius: var(--radius-pill);
+  padding: 10px 16px;
 }
-.actionBtn span { font-size: 16px; }
+.actionBtn:hover {
+  background: var(--accent);
+  color: #fff;
+  transform: scale(1.02);
+}
+.actionBtn span { font-size: 14px; }
 
 .divider {
   height: 1px;
@@ -46,20 +55,20 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
 }
 .tips li {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-muted);
-  padding-left: 12px;
+  padding-left: 14px;
   position: relative;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 .tips li::before {
   content: '→';
   position: absolute;
   left: 0;
-  color: var(--accent);
+  color: var(--text-primary);
   font-size: 10px;
-  top: 2px;
+  top: 1px;
 }

@@ -24,6 +24,7 @@ export default function Step1Category({ onSelect }) {
   return (
     <main className={styles.main}>
       <div className={styles.hero}>
+        <span className={styles.eyebrow}>Passo 1 de 3</span>
         <h1 className={styles.title}>
           Qual é o <span className={styles.highlight}>objetivo</span> do seu vídeo?
         </h1>

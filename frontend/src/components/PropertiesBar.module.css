@@ -2,27 +2,28 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 20px;
+  padding: 10px 16px;
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-pill);
   width: 100%;
   max-width: 768px;
   flex-wrap: wrap;
+  box-shadow: var(--shadow-sm);
 }
 
 .select {
-  width: 140px;
-  padding: 6px 8px;
+  width: 130px;
+  padding: 6px 10px;
   background: var(--bg-raised);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
   color: var(--text-primary);
   font-family: inherit;
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
 }
-.select:focus { outline: none; border-color: var(--accent); }
+.select:focus { outline: none; border-color: rgba(0,0,0,0.25); }
 
 .toggle {
   width: 32px;
@@ -34,20 +35,20 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
   transition: all 0.15s;
 }
 .toggle:hover { background: var(--bg-hover); color: var(--text-primary); }
 .toggle.on {
-  background: var(--accent-light);
+  background: var(--accent);
   border-color: var(--accent);
-  color: var(--accent);
+  color: #fff;
 }
 
 .sep {
   width: 1px;
-  height: 28px;
+  height: 24px;
   background: var(--border);
   flex-shrink: 0;
 }
@@ -57,15 +58,15 @@
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  font-size: 10px;
-  font-weight: 600;
+  font-size: 9px;
+  font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
 }
 .colorLabel input[type="color"] {
-  width: 36px;
-  height: 28px;
+  width: 32px;
+  height: 26px;
   padding: 2px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
@@ -77,27 +78,31 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
   white-space: nowrap;
 }
 .sliderLabel input[type="range"] {
-  width: 80px;
+  width: 72px;
   accent-color: var(--accent);
 }
 .sliderLabel span:last-child {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-primary);
-  min-width: 16px;
+  min-width: 18px;
   text-align: right;
+  font-weight: 600;
 }
 
 .gap { flex: 1; }
 
 .objType {
-  font-size: 13px;
-  color: var(--text-secondary);
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
