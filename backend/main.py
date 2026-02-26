@@ -1,20 +1,19 @@
 """
-Backend — Gerador de Thumb v0.3
+Backend — Gerador de Thumb v0.4
 FastAPI: análise de referência → geração Gemini → extração de elementos editáveis.
+Imagens retornadas como base64 data URLs (compatível com Vercel serverless).
 """
 
 import base64
 import json
 import os
 import re
-import uuid
 from pathlib import Path
 
 import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 
 load_dotenv()
 
@@ -22,21 +21,17 @@ load_dotenv()
 # App setup
 # ---------------------------------------------------------------------------
 
-app = FastAPI(title="Gerador de Thumb API", version="0.3.0")
+app = FastAPI(title="Gerador de Thumb API", version="0.4.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 BASE_DIR = Path(__file__).parent
-UPLOAD_DIR = BASE_DIR.parent / ".tmp" / "uploads"
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-
-app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
 # ---------------------------------------------------------------------------
 # Data
@@ -63,7 +58,7 @@ OBJECTIVE_CONTEXT: dict[str, str] = {
 def _api_key() -> str:
     key = os.getenv("GOOGLE_API_KEY", "")
     if not key:
-        raise HTTPException(500, "GOOGLE_API_KEY não configurada no .env")
+        raise HTTPException(500, "GOOGLE_API_KEY não configurada")
     return key
 
 def _gen_model() -> str:
@@ -281,7 +276,6 @@ Se não houver texto, retorne []."""
     if match:
         try:
             elements = json.loads(match.group())
-            # Garante que todos os campos obrigatórios existem
             clean = []
             for i, el in enumerate(elements):
                 clean.append({
@@ -313,10 +307,11 @@ def get_categories():
 
 @app.post("/api/upload")
 async def upload_image(file: UploadFile = File(...)):
-    ext = Path(file.filename or "img").suffix or ".png"
-    name = f"{uuid.uuid4().hex}{ext}"
-    (UPLOAD_DIR / name).write_bytes(await file.read())
-    return {"url": f"/uploads/{name}"}
+    """Retorna a imagem como base64 data URL (sem escrita em disco)."""
+    content = await file.read()
+    mime = file.content_type or "image/jpeg"
+    b64 = base64.b64encode(content).decode()
+    return {"url": f"data:{mime};base64,{b64}"}
 
 
 @app.post("/api/generate")
@@ -350,10 +345,9 @@ async def generate_thumbnail(
         api_key, full_prompt, person_bytes, person_mime, ref_bytes, ref_mime
     )
 
-    # ── 4. Salva a imagem ─────────────────────────────────────────
-    filename = f"thumb_{uuid.uuid4().hex}.jpg"
-    (UPLOAD_DIR / filename).write_bytes(image_bytes)
-    image_url = f"/uploads/{filename}"
+    # ── 4. Retorna como base64 data URL (sem escrita em disco) ────
+    b64 = base64.b64encode(image_bytes).decode()
+    image_url = f"data:image/jpeg;base64,{b64}"
 
     # ── 5. Extrai elementos de texto editáveis ────────────────────
     elements = await _extract_elements(api_key, image_bytes)
@@ -363,7 +357,7 @@ async def generate_thumbnail(
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "version": "0.3.0", "model": _gen_model()}
+    return {"status": "ok", "version": "0.4.0", "model": _gen_model()}
 
 
 if __name__ == "__main__":
