@@ -22,12 +22,6 @@ export default function App() {
     setStep(3)
   }
 
-  function handleEditorBlank() {
-    setGeneratedImageUrl(null)
-    setGeneratedElements([])
-    setStep(3)
-  }
-
   function handleBack() {
     if (step === 2) { setStep(1); setSelectedCategory(null) }
     if (step === 3) { setStep(2); setGeneratedImageUrl(null); setGeneratedElements([]) }
@@ -45,11 +39,10 @@ export default function App() {
         <Step2Generator
           category={selectedCategory}
           onGenerated={handleGenerated}
-          onEditorBlank={handleEditorBlank}
         />
       )}
 
-      {step === 3 && (
+      {step === 3 && generatedImageUrl && (
         <EditorView
           generatedImageUrl={generatedImageUrl}
           elements={generatedElements}
