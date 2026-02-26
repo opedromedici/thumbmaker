@@ -133,7 +133,8 @@ Retorne APENAS JSON válido, sem markdown, sem explicações adicionais.
 
 
 def _build_prompt(objective: str, user_prompt: str, ref_analysis: dict,
-                   similarity: int = 60, has_extra: bool = False) -> str:
+                   similarity: int = 60, has_extra: bool = False,
+                   has_person: bool = True) -> str:
     ctx = OBJECTIVE_CONTEXT.get(objective, "")
 
     # Calibrar instrução de fidelidade baseada no nível de similaridade
@@ -169,9 +170,15 @@ ATMOSFERA: {atm}
 ═══════════════════════════════════════════
 """
 
-    extra_rule = ""
-    if has_extra:
-        extra_rule = "\n- A ÚLTIMA IMAGEM enviada é um elemento gráfico extra (logo/sticker/overlay) — posicione-o de forma harmoniosa e visível na composição, respeitando a hierarquia visual."
+    person_rule = (
+        "- A PRIMEIRA IMAGEM enviada é a pessoa protagonista — inclua ela de forma clara e visível na thumbnail"
+        if has_person else
+        "- Crie uma composição visualmente impactante mesmo sem foto de pessoa"
+    )
+    extra_rule = (
+        "\n- A ÚLTIMA IMAGEM enviada é um elemento gráfico extra (logo/sticker/overlay) — posicione-o de forma harmoniosa e visível na composição, respeitando a hierarquia visual."
+        if has_extra else ""
+    )
 
     return f"""Você é um especialista em criação de thumbnails virais para YouTube com alto CTR.
 
@@ -181,7 +188,7 @@ INSTRUÇÃO DO CRIADOR: {user_prompt}
 
 REGRAS ABSOLUTAS:
 - Resolução: exatamente 1280x720 pixels, formato 16:9 horizontal
-- A PRIMEIRA IMAGEM enviada é a pessoa protagonista — inclua ela de forma clara e visível na thumbnail
+{person_rule}
 - RESPEITE 100% A ESTRUTURA DO TEMPLATE SELECIONADO. Apenas substitua os conteúdos (texto, pessoa, cores); não altere layout, hierarquia visual nem posição dos elementos
 - Não quebre a hierarquia visual: título principal maior, subtítulo menor, pessoa em posição definida
 - Aplique textos gerados APENAS dentro das áreas permitidas pela composição do template
@@ -196,10 +203,9 @@ async def _generate_image(api_key: str, prompt: str,
                            extra_bytes: bytes | None = None, extra_mime: str | None = None) -> bytes:
     model = _gen_model()
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
-    parts: list[dict] = [
-        {"text": prompt},
-        {"inline_data": {"mime_type": person_mime, "data": base64.b64encode(person_bytes).decode()}},
-    ]
+    parts: list[dict] = [{"text": prompt}]
+    if person_bytes and person_mime:
+        parts.append({"inline_data": {"mime_type": person_mime, "data": base64.b64encode(person_bytes).decode()}})
     if ref_bytes and ref_mime:
         parts.append({"inline_data": {"mime_type": ref_mime, "data": base64.b64encode(ref_bytes).decode()}})
     if extra_bytes and extra_mime:
@@ -276,16 +282,22 @@ async def upload_image(file: UploadFile = File(...)):
 @app.post("/api/generate")
 async def generate_thumbnail(
     objective: str = Form(...),
-    prompt: str = Form(...),
-    person_image: UploadFile = File(...),
+    prompt: str = Form(""),
+    person_image: UploadFile = File(None),
     reference_image: UploadFile = File(None),
     extra_elements: UploadFile = File(None),
     similarity: int = Form(60),
 ):
     api_key = _api_key()
 
-    person_bytes = await person_image.read()
-    person_mime = person_image.content_type or "image/jpeg"
+    if not prompt.strip() and not (person_image and person_image.filename) and not (reference_image and reference_image.filename):
+        raise HTTPException(400, "Envie pelo menos um prompt ou uma imagem.")
+
+    person_bytes: bytes | None = None
+    person_mime: str | None = None
+    if person_image and person_image.filename:
+        person_bytes = await person_image.read()
+        person_mime = person_image.content_type or "image/jpeg"
 
     ref_bytes: bytes | None = None
     ref_mime: str | None = None
@@ -307,6 +319,7 @@ async def generate_thumbnail(
         objective, prompt, ref_analysis,
         similarity=max(0, min(100, similarity)),
         has_extra=bool(extra_bytes),
+        has_person=bool(person_bytes),
     )
 
     image_bytes = await _generate_image(
