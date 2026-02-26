@@ -106,3 +106,18 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
+
+@media (max-width: 768px) {
+  .bar {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    border-radius: var(--radius-lg);
+    max-width: 100%;
+    gap: 6px;
+  }
+  .bar::-webkit-scrollbar { display: none; }
+  .sliderLabel input[type="range"] { width: 52px; }
+  .select { width: 110px; }
+}

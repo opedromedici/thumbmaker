@@ -100,3 +100,13 @@
   min-width: 100px;
   justify-content: flex-end;
 }
+
+/* ── Mobile ── */
+@media (max-width: 600px) {
+  .header { padding: 0 16px; height: 52px; }
+  .logoText { display: none; }
+  .logoBadge { display: none; }
+  .stepLabel { display: none; }
+  .stepSep { width: 16px; margin: 0 4px; }
+  .actions { min-width: 60px; }
+}

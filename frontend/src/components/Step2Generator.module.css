@@ -8,6 +8,12 @@
   overflow-y: auto;
 }
 
+@media (max-width: 600px) {
+  .main { padding: 28px 16px 48px; gap: 28px; }
+  .form { gap: 20px; }
+  .textarea { font-size: 16px; } /* evita zoom no iOS */
+}
+
 /* ── Hero ── */
 .hero { text-align: center; }
 
