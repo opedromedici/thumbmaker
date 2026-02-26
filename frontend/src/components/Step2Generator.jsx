@@ -1,29 +1,35 @@
 import { useState, useRef } from 'react'
 import styles from './Step2Generator.module.css'
 
+function similarityLabel(v) {
+  if (v <= 30) return 'Apenas inspiração leve'
+  if (v <= 70) return 'Estrutura semelhante'
+  return 'Muito próximo da referência'
+}
+
 export default function Step2Generator({ category, onGenerated }) {
-  const [prompt, setPrompt] = useState('')
-  const [personFile, setPersonFile] = useState(null)
-  const [refFile, setRefFile] = useState(null)
+  const [prompt, setPrompt]           = useState('')
+  const [personFile, setPersonFile]   = useState(null)
+  const [refFile, setRefFile]         = useState(null)
+  const [extraFile, setExtraFile]     = useState(null)
   const [personPreview, setPersonPreview] = useState(null)
-  const [refPreview, setRefPreview] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const [refPreview, setRefPreview]   = useState(null)
+  const [extraPreview, setExtraPreview]   = useState(null)
+  const [similarity, setSimilarity]   = useState(60)
+  const [loading, setLoading]         = useState(false)
+  const [error, setError]             = useState(null)
 
   const personInputRef = useRef(null)
-  const refInputRef = useRef(null)
+  const refInputRef    = useRef(null)
+  const extraInputRef  = useRef(null)
 
   function handleFileChange(e, type) {
     const file = e.target.files?.[0]
     if (!file) return
     const url = URL.createObjectURL(file)
-    if (type === 'person') {
-      setPersonFile(file)
-      setPersonPreview(url)
-    } else {
-      setRefFile(file)
-      setRefPreview(url)
-    }
+    if (type === 'person') { setPersonFile(file); setPersonPreview(url) }
+    else if (type === 'ref') { setRefFile(file); setRefPreview(url) }
+    else { setExtraFile(file); setExtraPreview(url) }
   }
 
   function handleDrop(e, type) {
@@ -32,7 +38,8 @@ export default function Step2Generator({ category, onGenerated }) {
     if (!file || !file.type.startsWith('image/')) return
     const url = URL.createObjectURL(file)
     if (type === 'person') { setPersonFile(file); setPersonPreview(url) }
-    else { setRefFile(file); setRefPreview(url) }
+    else if (type === 'ref') { setRefFile(file); setRefPreview(url) }
+    else { setExtraFile(file); setExtraPreview(url) }
   }
 
   async function handleGenerate() {
@@ -46,7 +53,9 @@ export default function Step2Generator({ category, onGenerated }) {
       form.append('objective', category.id)
       form.append('prompt', prompt)
       form.append('person_image', personFile)
+      form.append('similarity', String(similarity))
       if (refFile) form.append('reference_image', refFile)
+      if (extraFile) form.append('extra_elements', extraFile)
 
       const res = await fetch('/api/generate', { method: 'POST', body: form })
       const data = await res.json()
@@ -95,7 +104,7 @@ export default function Step2Generator({ category, onGenerated }) {
           </p>
         </div>
 
-        {/* ── Uploads ── */}
+        {/* ── Uploads principais ── */}
         <div className={styles.uploads}>
 
           {/* Foto da pessoa */}
@@ -128,13 +137,7 @@ export default function Step2Generator({ category, onGenerated }) {
                 Trocar foto
               </button>
             )}
-            <input
-              ref={personInputRef}
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={e => handleFileChange(e, 'person')}
-            />
+            <input ref={personInputRef} type="file" accept="image/*" hidden onChange={e => handleFileChange(e, 'person')} />
           </div>
 
           {/* Referência */}
@@ -167,14 +170,67 @@ export default function Step2Generator({ category, onGenerated }) {
                 Trocar referência
               </button>
             )}
-            <input
-              ref={refInputRef}
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={e => handleFileChange(e, 'ref')}
-            />
+            <input ref={refInputRef} type="file" accept="image/*" hidden onChange={e => handleFileChange(e, 'ref')} />
           </div>
+        </div>
+
+        {/* ── Slider de similaridade ── */}
+        {refPreview && (
+          <div className={styles.similaritySection}>
+            <div className={styles.similarityHeader}>
+              <label className={styles.similarityLabel}>
+                Quão parecido você quer com a referência?
+              </label>
+              <span className={styles.similarityBadge}>{similarity}%</span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={5}
+              value={similarity}
+              onChange={e => setSimilarity(parseInt(e.target.value))}
+              className={styles.similaritySlider}
+            />
+            <div className={styles.similarityTicks}>
+              <span>Livre</span>
+              <span className={styles.similarityHint}>{similarityLabel(similarity)}</span>
+              <span>Idêntico</span>
+            </div>
+          </div>
+        )}
+
+        {/* ── Elementos extras ── */}
+        <div className={styles.field}>
+          <label>
+            Elementos visuais extras
+            <span className={styles.optional}>(logo, overlay, sticker…)</span>
+          </label>
+          <div
+            className={`${styles.dropzone} ${styles.dropzoneWide} ${extraPreview ? styles.hasFile : ''}`}
+            onDragOver={e => e.preventDefault()}
+            onDrop={e => handleDrop(e, 'extra')}
+            onClick={() => extraInputRef.current?.click()}
+          >
+            {extraPreview ? (
+              <img src={extraPreview} alt="Elemento extra" className={styles.previewWide} />
+            ) : (
+              <>
+                <span className={styles.dropIcon}>🎨</span>
+                <p>Arraste ou clique para enviar</p>
+                <p className={styles.dropSub}>Logo, marca d'água, ícone, sticker — PNG com transparência recomendado</p>
+              </>
+            )}
+          </div>
+          {extraPreview && (
+            <button
+              className={`btn btn-ghost btn-sm ${styles.removeBtn}`}
+              onClick={() => { setExtraFile(null); setExtraPreview(null) }}
+            >
+              Remover elemento
+            </button>
+          )}
+          <input ref={extraInputRef} type="file" accept="image/*" hidden onChange={e => handleFileChange(e, 'extra')} />
         </div>
 
         {/* ── Erro ── */}

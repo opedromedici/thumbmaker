@@ -132,17 +132,31 @@ Retorne APENAS JSON válido, sem markdown, sem explicações adicionais.
     return {}
 
 
-def _build_prompt(objective: str, user_prompt: str, ref_analysis: dict) -> str:
+def _build_prompt(objective: str, user_prompt: str, ref_analysis: dict,
+                   similarity: int = 60, has_extra: bool = False) -> str:
     ctx = OBJECTIVE_CONTEXT.get(objective, "")
+
+    # Calibrar instrução de fidelidade baseada no nível de similaridade
+    if similarity <= 30:
+        fidelity_header = "REFERÊNCIA VISUAL — USE COMO INSPIRAÇÃO LEVE:"
+        fidelity_rule   = f"Nível {similarity}%: Inspire-se APENAS na atmosfera e mood geral. Crie algo original e diferente — layout, cores e tipografia são livres."
+    elif similarity <= 70:
+        fidelity_header = "REFERÊNCIA VISUAL — SIGA A ESTRUTURA GERAL:"
+        fidelity_rule   = f"Nível {similarity}%: Mantenha layout e composição similares. Adapte cores e tipografia ao conteúdo do criador, mas preserve a hierarquia visual."
+    else:
+        fidelity_header = "REFERÊNCIA VISUAL — REPLIQUE COM MÁXIMA FIDELIDADE:"
+        fidelity_rule   = f"Nível {similarity}%: Reproduza QUASE IDENTICAMENTE. Mesmo layout, mesmas cores, mesma tipografia, mesma composição. A thumbnail deve parecer criada pelo mesmo designer da referência."
+
     ref_section = ""
     if ref_analysis:
-        t = ref_analysis.get("typography", {})
-        l = ref_analysis.get("layout", {})
-        c = ref_analysis.get("colors", {})
+        t   = ref_analysis.get("typography", {})
+        l   = ref_analysis.get("layout", {})
+        c   = ref_analysis.get("colors", {})
         atm = ref_analysis.get("atmosphere", "")
         ref_section = f"""
 ═══════════════════════════════════════════
-DESIGN SYSTEM DA REFERÊNCIA — SIGA RIGOROSAMENTE:
+{fidelity_header}
+{fidelity_rule}
 ═══════════════════════════════════════════
 TIPOGRAFIA:
 - Fonte: {t.get('headline_font','Impact')} | Peso: {t.get('headline_weight','bold')} | Caixa: {t.get('text_case','UPPERCASE')}
@@ -154,6 +168,11 @@ CORES: Fundo {c.get('background_main','#0D0D1A')} ({c.get('background_type','sol
 ATMOSFERA: {atm}
 ═══════════════════════════════════════════
 """
+
+    extra_rule = ""
+    if has_extra:
+        extra_rule = "\n- A ÚLTIMA IMAGEM enviada é um elemento gráfico extra (logo/sticker/overlay) — posicione-o de forma harmoniosa e visível na composição, respeitando a hierarquia visual."
+
     return f"""Você é um especialista em criação de thumbnails virais para YouTube com alto CTR.
 
 OBJETIVO: {ctx}
@@ -162,17 +181,19 @@ INSTRUÇÃO DO CRIADOR: {user_prompt}
 
 REGRAS ABSOLUTAS:
 - Resolução: exatamente 1280x720 pixels, formato 16:9 horizontal
-- A PRIMEIRA IMAGEM enviada é a pessoa protagonista — inclua ela de forma clara e visível
-- Reproduza fielmente composição, tipografia e paleta de cores da referência
-- Texto curto e impactante (máximo 4 palavras por linha), contraste alto, cores vibrantes
-- A thumbnail deve parecer criada pelo mesmo designer da referência
+- A PRIMEIRA IMAGEM enviada é a pessoa protagonista — inclua ela de forma clara e visível na thumbnail
+- RESPEITE 100% A ESTRUTURA DO TEMPLATE SELECIONADO. Apenas substitua os conteúdos (texto, pessoa, cores); não altere layout, hierarquia visual nem posição dos elementos
+- Não quebre a hierarquia visual: título principal maior, subtítulo menor, pessoa em posição definida
+- Aplique textos gerados APENAS dentro das áreas permitidas pela composição do template
+- Texto curto e impactante (máximo 4 palavras por linha), contraste alto, cores vibrantes{extra_rule}
 
 Gere apenas a imagem final da thumbnail. Nenhum texto explicativo."""
 
 
 async def _generate_image(api_key: str, prompt: str,
                            person_bytes: bytes, person_mime: str,
-                           ref_bytes: bytes | None, ref_mime: str | None) -> bytes:
+                           ref_bytes: bytes | None, ref_mime: str | None,
+                           extra_bytes: bytes | None = None, extra_mime: str | None = None) -> bytes:
     model = _gen_model()
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
     parts: list[dict] = [
@@ -181,6 +202,8 @@ async def _generate_image(api_key: str, prompt: str,
     ]
     if ref_bytes and ref_mime:
         parts.append({"inline_data": {"mime_type": ref_mime, "data": base64.b64encode(ref_bytes).decode()}})
+    if extra_bytes and extra_mime:
+        parts.append({"inline_data": {"mime_type": extra_mime, "data": base64.b64encode(extra_bytes).decode()}})
 
     payload = {
         "contents": [{"parts": parts}],
@@ -256,6 +279,8 @@ async def generate_thumbnail(
     prompt: str = Form(...),
     person_image: UploadFile = File(...),
     reference_image: UploadFile = File(None),
+    extra_elements: UploadFile = File(None),
+    similarity: int = Form(60),
 ):
     api_key = _api_key()
 
@@ -268,14 +293,25 @@ async def generate_thumbnail(
         ref_bytes = await reference_image.read()
         ref_mime = reference_image.content_type or "image/jpeg"
 
+    extra_bytes: bytes | None = None
+    extra_mime: str | None = None
+    if extra_elements and extra_elements.filename:
+        extra_bytes = await extra_elements.read()
+        extra_mime = extra_elements.content_type or "image/png"
+
     ref_analysis: dict = {}
     if ref_bytes and ref_mime:
         ref_analysis = await _analyze_reference(api_key, ref_bytes, ref_mime)
 
-    full_prompt = _build_prompt(objective, prompt, ref_analysis)
+    full_prompt = _build_prompt(
+        objective, prompt, ref_analysis,
+        similarity=max(0, min(100, similarity)),
+        has_extra=bool(extra_bytes),
+    )
 
     image_bytes = await _generate_image(
-        api_key, full_prompt, person_bytes, person_mime, ref_bytes, ref_mime
+        api_key, full_prompt, person_bytes, person_mime,
+        ref_bytes, ref_mime, extra_bytes, extra_mime,
     )
 
     b64 = base64.b64encode(image_bytes).decode()

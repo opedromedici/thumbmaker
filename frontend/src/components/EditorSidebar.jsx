@@ -8,11 +8,11 @@ export default function EditorSidebar({ editorRef, onImageUpload }) {
     const canvas = editorRef.current?.getFabric()
     if (!canvas) return
     import('fabric').then(({ fabric }) => {
-      const t = new fabric.IText('Seu texto', {
+      const t = new fabric.IText('SEU TEXTO', {
         left: 80,
         top: 300,
         fontSize: 90,
-        fontFamily: 'Impact',
+        fontFamily: 'Anton',
         fill: '#ffffff',
         stroke: '#000000',
         strokeWidth: 4,
