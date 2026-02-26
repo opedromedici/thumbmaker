@@ -189,12 +189,11 @@ INSTRUÇÃO DO CRIADOR: {user_prompt}
 REGRAS ABSOLUTAS:
 - Resolução: exatamente 1280x720 pixels, formato 16:9 horizontal
 {person_rule}
-- RESPEITE 100% A ESTRUTURA DO TEMPLATE SELECIONADO. Apenas substitua os conteúdos (texto, pessoa, cores); não altere layout, hierarquia visual nem posição dos elementos
-- Não quebre a hierarquia visual: título principal maior, subtítulo menor, pessoa em posição definida
-- Aplique textos gerados APENAS dentro das áreas permitidas pela composição do template
-- Texto curto e impactante (máximo 4 palavras por linha), contraste alto, cores vibrantes{extra_rule}
+- ⚠️ CRÍTICO — SEM TEXTO NA IMAGEM: NÃO inclua nenhum texto, palavra, número, letra, título ou legenda na imagem. Zero texto. A composição deve conter APENAS elementos visuais: pessoa, fundo, cores, gradientes, formas gráficas. O texto será adicionado como camada editável separada.
+- RESPEITE a estrutura e composição do template: layout, hierarquia visual, posição da pessoa e zonas de design
+- Deixe as áreas de texto claramente definidas (contraste/espaço vazio) para receber os títulos depois{extra_rule}
 
-Gere apenas a imagem final da thumbnail. Nenhum texto explicativo."""
+Gere apenas a imagem de fundo sem texto. Nenhum texto explicativo."""
 
 
 async def _generate_image(api_key: str, prompt: str,
@@ -231,31 +230,93 @@ async def _generate_image(api_key: str, prompt: str,
     raise HTTPException(502, f"Gemini não retornou imagem. finishReason={finish}")
 
 
-async def _extract_elements(api_key: str, image_bytes: bytes) -> list[dict]:
-    prompt = """Analise esta thumbnail (1280x720 pixels) e identifique TODOS os textos visíveis.
-Retorne APENAS um array JSON válido, sem markdown ou explicações.
-Formato: [{"id":"elemento_N","text":"texto","x":0,"y":0,"fontSize":80,"fontFamily":"Impact","fill":"#FFFFFF","stroke":null,"strokeWidth":0,"fontWeight":"bold"}]
-Identifique cada linha separadamente. Se não houver texto, retorne []."""
+async def _generate_text_elements(
+    api_key: str, objective: str, user_prompt: str, ref_analysis: dict
+) -> list[dict]:
+    """Gera elementos de texto editáveis a partir do objetivo + prompt + referência.
+    Não depende da imagem gerada — evita duplicação de texto no canvas.
+    """
+    t = ref_analysis.get("typography", {})
+    l = ref_analysis.get("layout", {})
 
-    text = await _vision_call(api_key, prompt, image_bytes, "image/jpeg")
-    match = re.search(r'\[[\s\S]*\]', text)
+    font        = t.get("headline_font", "Anton")
+    text_colors = t.get("text_colors", ["#FFFFFF"])
+    stroke_cols = t.get("stroke_colors", ["#000000"])
+    has_stroke  = t.get("has_stroke", True)
+    line_count  = max(1, min(3, int(t.get("line_count", 2))))
+    text_case   = t.get("text_case", "UPPERCASE")
+    text_zone   = l.get("text_zone", "left")
+
+    # Posição horizontal baseada na zona de texto da referência
+    if "right" in text_zone:
+        base_x = 700
+    elif "center" in text_zone:
+        base_x = 300
+    else:
+        base_x = 60
+
+    fill_color   = text_colors[0] if text_colors else "#FFFFFF"
+    stroke_color = stroke_cols[0] if stroke_cols else "#000000"
+    stroke_w     = 4 if has_stroke else 0
+
+    ctx = OBJECTIVE_CONTEXT.get(objective, "")
+    case_hint = "EM CAIXA ALTA (UPPERCASE)" if "UPPER" in text_case else "em capitalização mista"
+
+    prompt = f"""Você é especialista em copywriting viral para thumbnails de YouTube.
+
+Objetivo da thumbnail: {ctx}
+Instrução do criador: {user_prompt if user_prompt.strip() else "(sem instrução adicional)"}
+Número de linhas de texto: {line_count}
+Estilo: textos {case_hint}, curtos, chocantes, que geram clique
+
+Crie exatamente {line_count} texto(s) impactante(s) para esta thumbnail.
+Canvas: 1280x720 pixels. Zona de texto: {text_zone} (x base: {base_x}px).
+
+LINHA 1 (título principal): maior, fonte ~120-140px, y~80
+LINHA 2 (subtítulo, se houver): menor, fonte ~75-90px, y~260
+LINHA 3 (complemento, se houver): menor ainda, fonte ~60px, y~380
+
+Retorne APENAS JSON válido, sem markdown:
+[{{"id":"t0","text":"TEXTO","x":{base_x},"y":80,"fontSize":130,"fontFamily":"{font}","fill":"{fill_color}","stroke":"{stroke_color}","strokeWidth":{stroke_w},"fontWeight":"bold"}}]
+
+Máximo 4 palavras por linha. Sem pontuação desnecessária."""
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{VISION_MODEL}:generateContent?key={api_key}"
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"temperature": 0.8},
+    }
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        resp = await client.post(url, json=payload)
+        if resp.status_code != 200:
+            return []
+        data = resp.json()
+
+    raw = ""
+    for candidate in data.get("candidates", []):
+        for part in candidate.get("content", {}).get("parts", []):
+            if "text" in part:
+                raw = part["text"]
+                break
+
+    match = re.search(r'\[[\s\S]*\]', raw)
     if match:
         try:
             elements = json.loads(match.group())
             return [
                 {
-                    "id": el.get("id", f"text_{i}"),
+                    "id": el.get("id", f"t{i}"),
                     "text": str(el.get("text", "")),
-                    "x": float(el.get("x", 60)),
-                    "y": float(el.get("y", 100 + i * 120)),
-                    "fontSize": float(el.get("fontSize", 80)),
-                    "fontFamily": str(el.get("fontFamily", "Impact")),
-                    "fill": str(el.get("fill", "#FFFFFF")),
-                    "stroke": el.get("stroke") or None,
-                    "strokeWidth": float(el.get("strokeWidth", 0)),
-                    "fontWeight": str(el.get("fontWeight", "normal")),
+                    "x": float(el.get("x", base_x)),
+                    "y": float(el.get("y", 80 + i * 180)),
+                    "fontSize": float(el.get("fontSize", 130 - i * 40)),
+                    "fontFamily": str(el.get("fontFamily", font)),
+                    "fill": str(el.get("fill", fill_color)),
+                    "stroke": el.get("stroke") or stroke_color,
+                    "strokeWidth": float(el.get("strokeWidth", stroke_w)),
+                    "fontWeight": str(el.get("fontWeight", "bold")),
                 }
-                for i, el in enumerate(elements)
+                for i, el in enumerate(elements[:3])
             ]
         except Exception:
             pass
@@ -330,7 +391,8 @@ async def generate_thumbnail(
     b64 = base64.b64encode(image_bytes).decode()
     image_url = f"data:image/jpeg;base64,{b64}"
 
-    elements = await _extract_elements(api_key, image_bytes)
+    # Gera textos a partir do prompt/objetivo — não da imagem — evitando duplicação
+    elements = await _generate_text_elements(api_key, objective, prompt, ref_analysis)
 
     return {"url": image_url, "elements": elements, "ref_analysis": ref_analysis}
 
