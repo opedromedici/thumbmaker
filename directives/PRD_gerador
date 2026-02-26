@@ -1,0 +1,294 @@
+# FRAMEWORK — CRIADOR DE THUMBNAILS PARA INFOPRODUTORES E EMPREENDEDORES
+
+## POSICIONAMENTO DO PRODUTO
+
+Uma plataforma de criação de thumbnails focada 100% em conversão para YouTube, com templates otimizados para:
+
+* Marketing digital
+* Negócios
+* Finanças
+* Vendas
+* Empreendedorismo
+* Infoprodutos
+* Autoridade pessoal
+
+O objetivo não é design bonito.
+
+O objetivo é clique.
+
+---
+
+# ARQUITETURA DO SISTEMA
+
+O sistema funciona em 6 etapas principais:
+
+## ETAPA 1 — ESCOLHA DO OBJETIVO DO VÍDEO
+
+O usuário seleciona o tipo de conteúdo:
+
+* Promessa de resultado
+* Polêmica
+* Erro comum
+* Segredo revelado
+* Autoridade
+* Transformação
+* Dinheiro
+* Comparação
+* Tutorial
+* Reação
+* História pessoal
+* Caso de sucesso
+
+Isso define automaticamente o estilo psicológico da thumb.
+
+---
+
+## ETAPA 2 — SELEÇÃO DE TEMPLATE
+
+Cada categoria possui um banco de templates baseado em padrões que já performam no YouTube.
+
+Exemplos de arquétipos:
+
+* Rosto gigante + 3 palavras
+* Antes vs Depois
+* Número chamativo
+* Reação extrema
+* Print de resultado
+* Comparação lado a lado
+* Elemento de choque visual
+* Seta apontando
+* Círculo vermelho
+* Dinheiro destacado
+* Gráfico subindo ou caindo
+
+O sistema recomenda templates automaticamente.
+
+---
+
+## ETAPA 3 — UPLOAD DE ELEMENTOS
+
+O usuário envia:
+
+* Foto principal (rosto)
+* Prints
+* Produto
+* Logo
+* Elementos extras
+
+O sistema transforma tudo em camadas editáveis.
+
+Recursos automáticos opcionais:
+
+* Remoção de fundo
+* Contorno do personagem
+* Glow de destaque
+* Ajuste de contraste
+* Nitidez facial
+
+---
+
+## ETAPA 4 — GERAÇÃO AUTOMÁTICA DA THUMB
+
+O template é aplicado instantaneamente:
+
+* Layout pronto
+* Fontes aplicadas
+* Efeitos aplicados
+* Hierarquia visual definida
+
+O usuário já vê uma thumbnail pronta em segundos.
+
+---
+
+## ETAPA 5 — EDITOR LIVRE (DIFERENCIAL PRINCIPAL)
+
+O usuário pode:
+
+* Arrastar elementos
+* Redimensionar livremente
+* Girar
+* Trocar textos
+* Alterar cores
+* Ajustar sombras
+* Ajustar contornos
+* Reposicionar imagens
+* Alterar fontes
+* Editar números e palavras
+
+Funciona como um mini Photoshop simplificado.
+
+---
+
+## ETAPA 6 — EXPORTAÇÃO E VARIAÇÕES
+
+Opções disponíveis:
+
+* Export PNG 1280×720
+* Export JPG
+* Salvar projeto
+* Duplicar thumbnail
+* Criar variações A/B
+* Baixar múltiplas versões
+
+---
+
+# BANCO DE TEMPLATES — CATEGORIAS PRINCIPAIS
+
+## DINHEIRO / RESULTADO
+
+* “Faturei X”
+* “R$ 0 → R$ X”
+* “Como ganhei X”
+* “Segredo do dinheiro”
+
+## PROMESSA
+
+* “Em X dias”
+* “Método que funciona”
+* “Passo a passo”
+* “Como sair do zero”
+
+## POLÊMICA
+
+* “Ninguém fala”
+* “Estão mentindo”
+* “Pare de fazer isso”
+* “A verdade sobre”
+
+## ERRO
+
+* “Você está fazendo errado”
+* “3 erros”
+* “Nunca faça isso”
+* “O maior erro”
+
+## AUTORIDADE
+
+* Prints
+* Resultados
+* Depoimentos
+* Bastidores
+
+## TRANSFORMAÇÃO
+
+* Antes vs Depois
+* Evolução
+* Comparação visual
+
+---
+
+# SISTEMA DE HEADLINES AUTOMÁTICAS (IA)
+
+A IA pode sugerir textos curtos com base em:
+
+* Categoria
+* Nicho
+* Objetivo do vídeo
+* Emoção desejada
+
+Exemplo:
+
+Input:
+“Como vender mais usando WhatsApp”
+
+Sugestões:
+
+* “VENDA TODO DIA”
+* “WHATSAPP MILIONÁRIO”
+* “ISSO FUNCIONA”
+* “NÃO FAÇA ASSIM”
+* “CLIENTES TODO DIA”
+
+---
+
+# SISTEMA DE THUMB SCORE
+
+Antes do download, o sistema avalia:
+
+* Legibilidade
+* Contraste
+* Quantidade de texto
+* Foco visual
+* Impacto emocional
+
+E sugere melhorias.
+
+---
+
+# DIFERENCIAL COMPETITIVO
+
+A maioria das ferramentas de design:
+
+→ Focam em estética
+
+Esta ferramenta:
+
+→ Foca em conversão
+
+Ela nasce com base em:
+
+* Psicologia de clique
+* Marketing direto
+* YouTube performance
+* Padrões virais
+
+---
+
+# TECNOLOGIA RECOMENDADA
+
+Frontend:
+
+* React
+* Konva.js ou Fabric.js
+
+Backend:
+
+* Python ou Node
+* Armazenamento S3
+* Banco de templates JSON
+
+IA:
+
+* OpenAI / modelos de imagem
+* Remoção de fundo automática
+* Sugestão de headline
+
+---
+
+# MVP ENXUTO
+
+Primeira versão:
+
+* 8 categorias
+* 40 templates
+* Upload de imagens
+* Editor livre
+* Export PNG
+* Salvar projeto
+
+Tempo de construção estimado:
+
+2 a 4 semanas com boa execução.
+
+---
+
+# VISÃO FUTURA
+
+Versões avançadas podem incluir:
+
+* Thumb automática com IA completa
+* Recomendações baseadas no título do vídeo
+* Teste A/B integrado
+* Biblioteca de marcas pessoais
+* Análise de CTR histórica
+* Integração com YouTube
+
+---
+
+# POSICIONAMENTO DE MERCADO
+
+Essa ferramenta não é “Canva”.
+
+É:
+
+Uma máquina de cliques para empreendedores.
